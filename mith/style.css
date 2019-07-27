@@ -48,6 +48,7 @@
 .minmax {
 	width: 45%;
 	box-sizing: border-box;
+	display: none;
 }
 button {
 	float: left;
