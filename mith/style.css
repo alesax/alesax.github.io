@@ -13,6 +13,17 @@
 	float: left;
 }
 
+.exa_sg {
+	width: 75%;
+	font-weight: bold;
+	height: 2em;
+	text-align: right;
+	vertical-align: middle;
+	box-sizing: border-box;
+	float: left;
+	cursor: pointer;
+}
+
 .roe {
 	box-sizing: border-box;
 	width: 100%;

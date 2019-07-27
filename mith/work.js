@@ -1,6 +1,6 @@
 var maxMultiply = 9;
 var maxMultiplied = 12;
-var exCount = 12;
+var exCount = 2;
 var malusCount = 0;
 var startTime = 0;
 var errorCount = 0;
@@ -163,7 +163,142 @@ function check(e)
 		createExample();
 
 	if (cntbad == 0) {
-		deleteInterval(checkTime);
+		clearInterval(checkTime);
+	}
+}
+
+function findTrueRow(r)
+{
+	while (r != null && r._result == undefined) r = r.parentNode;
+	return r;
+}
+
+function allowDrop (e)
+{
+	e.preventDefault();
+}
+function dragEnter (e)
+{
+	console.log(e.target);
+	console.log("DragEnter " + document._dragi);
+	var rou = findTrueRow(e.target);
+	if (rou == null) return;
+	if (rou == document._dragi) return;
+	var src = e.dataTransfer.getData("id");
+	rou.parentNode.insertBefore(document._dragi, rou);
+
+}
+
+function dragOver(e)
+{
+	e.preventDefault();
+	console.log(e.target);
+	console.log(document._dragi);
+	var rou = findTrueRow(e.target);
+	if (rou == null) return;
+	var src = e.dataTransfer.getData("id");
+	rou.parentNode.insertBefore(document._dragi, rou);
+
+}
+
+function drop(e)
+{
+	e.preventDefault();
+}
+
+function dragStart(e)
+{
+	var row = findTrueRow(e.target);
+	if (row == null) return;
+	e.dataTransfer.setData("id", row.id);
+	document._dragi = row;
+	console.log("DragStart");
+}
+
+function createExampleSG(result)
+{
+	var min = document.forms['mForm'].min.value;
+	var max = document.forms['mForm'].max.value;
+	var examples = document.getElementById('examples');
+
+	var row = document.createElement('div');
+	row.className = "roe";
+	var e = document.createElement('div');
+	e.className = "exa_sg";
+	e.textContent = gex(result, min, max, 2, 0);
+	e._val = result;
+
+	//e.textContent = res[0] + ' = ';
+	//e._val = res[1];
+	row.appendChild(e);
+	examples.appendChild(row);
+
+	row.setAttribute('draggable', 'true');
+	row.addEventListener('dragstart', dragStart);
+	row.addEventListener('dragover', allowDrop);
+	row.addEventListener('dragenter', dragEnter);
+	//row.addEventListener('dragend', dragEnd);
+	//row.addEventListener('dragexit', dragEnd);
+	row.addEventListener('drop', drop);
+	row._result = result;
+
+}
+
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function startSortGame(e)
+{
+	var min = parseInt(document.forms['mForm'].min.value);
+	var max = parseInt(document.forms['mForm'].max.value);
+
+	malusCount = 0;
+	var examples = document.getElementById('examples');
+	var i;
+
+	while(examples.childNodes.length)
+		examples.removeChild(examples.firstChild);
+
+	var arr = (Array.from(Array(max)).map((e,i)=>i+min));
+	shuffleArray(arr);
+	arr = arr.slice(0, exCount);
+
+	for (i = 0; i < exCount; i++) {
+		console.log(arr[i]);
+		createExampleSG(arr[i]);
+	}
+
+	arr = arr.sort();
+	document._sgresults = arr;
+
+	setInterval(checkTime, 100);
+	startTime = new Date();
+
+	//document.forms['mForm'].op.value);
+}
+
+function checkSortGame(e)
+{
+	var c = document.getElementsByClassName('exa');
+	var i;
+	var cntgood = 0;
+	var cntbad = 0;
+
+	for (i = 0; i < c.length; i++) {
+		if (c[i]._val != sgresults[i]) {
+			cntbad ++;
+			alert("chyba!");
+			break;
+		}
+	}
+
+	if (cntbad == 0) {
+		clearInterval(checkTime);
 	}
 }
 
