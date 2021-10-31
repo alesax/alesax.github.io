@@ -1,9 +1,10 @@
-var maxMultiply = 9;
-var maxMultiplied = 12;
-var exCount = 2;
+var maxMultiply = 12;
+var maxMultiplied = 200;
+var exCount = 20;
 var malusCount = 0;
 var startTime = 0;
 var errorCount = 0;
+var maxDivWithMod = 14;
 
 var operations = {
 	'-': {  'gex' : function(result, min, max, parpro, level) {
@@ -45,13 +46,39 @@ var operations = {
 			throw "Cannot divide";
 		}
 	},
+	'/mod': {
+		'gex' : function(result, min, max, parpro, level) {
+			if (level != 0) throw "Div with remainder can only be applied to 1st level";
+
+			// result = a / b + rem
+			var maxdiv = Math.min(maxDivWithMod+1, Math.floor(result/2));
+			maxdiv = Math.min (maxdiv, Math.floor(maxMultiplied / result));
+			if (maxdiv < 3) throw "Cannot div - too small";
+			var arr = [...Array(maxdiv).keys()].slice(2);
+
+			shuffleArray(arr);
+			var i = arr [0];
+			var rem = gen(0, i);
+
+			var a = gex(result * i - (i - rem), min, max, parpro - 1, level + 1);
+			var b = gex(i, min, max, parpro - 1, level + 1);
+			result -= (rem>0)?1:0;
+
+			return ({ exa: a + " / " + b + ":::" + result + "~~" + arr /*+ "{ "+ result + "," + rem  + "," + result*i + " }"*/, result: result, reminder: rem});
+
+			throw "Cannot divide";
+		}
+	},
+
 
 };
 var ops = [];
 ops.push (operations['-']);
-ops.push (operations['+']);
-ops.push (operations['*']);
-ops.push (operations['/']);
+//ops.push (operations['+']);
+//ops.push (operations['*']);
+//ops.push (operations['/']);
+if (maxDivWithMod)
+	ops.push (operations['/mod']);
 
 function gen(i,a) 
 {
@@ -109,17 +136,34 @@ function createExample()
 	row.className = "roe";
 	var e = document.createElement('div');
 	e.className = "exa";
-	var result = gen(min, max);
-	e.textContent = gex(result, min, max, 2, 0) + ' = ';
-	e._val = result;
+	row.appendChild(e);
 
-	//e.textContent = res[0] + ' = ';
-	//e._val = res[1];
 	var ne = document.createElement('input');
 	ne.className = "res";
 	ne.setAttribute('type', 'number');
-	row.appendChild(e);
 	row.appendChild(ne);
+	var result = gen(min, max);
+	var res = gex(result, min, max, 2, 0);
+
+	if (typeof(res) == 'object') {
+		e._val = res;
+
+		var re = document.createElement('input');
+		ne.className = "res15";
+		re.className = "res10";
+		re.setAttribute('type', 'number');
+		row.appendChild(re);
+		e.textContent = res.exa + ' = ';
+		e._inp_rem = re;
+
+	} else {
+		e.textContent = res + ' = ';
+		e._val = result;
+	}
+
+
+	//e.textContent = res[0] + ' = ';
+	//e._val = res[1];
 	examples.appendChild(row);
 	e._inp = ne;
 
@@ -151,11 +195,17 @@ function check(e)
 	var cntbad = 0;
 
 	for (i = 0; i < c.length; i++) {
-		if (c[i]._inp.value == c[i]._val) {
-			c[i].className = "exa good";
+		var z = c[i];
+		if (typeof(z._val) == 'object' 
+			&& z._inp.value == z._val.result 
+			&& z._inp_rem.value == z._val.reminder) {
+			z.className = "exa good";
+			cntgood ++;
+		} else if (z._inp.value == z._val) {
+			z.className = "exa good";
 			cntgood ++;
 		} else {
-			c[i].className = "exa wrong";
+			z.className = "exa wrong";
 			cntbad ++;
 		}
 	}
