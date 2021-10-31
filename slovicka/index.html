@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"> <head> <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="Content-Language" content="cs" />
+	<meta name="author" content="Alesak" />
+	<script language="JavaScript" type="text/javascript">
+function makeSelect(tx)
+{
+	var e = document.createElement('select');
+	var result = tx.split(/\//);
+	var correct = result[0];
+
+	shuffleArray(result);
+
+	var o = document.createElement('option');
+	o.textContent = '';
+	e.appendChild(o);
+
+	for (var i = 0; i < result.length; i ++) {
+		var o = document.createElement('option');
+		var r = result[i];
+		if (r.endsWith('*')) {
+			r = r.substr(0, r.length-1);
+			correct = r;
+		}
+		o.textContent = r;
+		e.appendChild(o);
+	}
+	e._correct = correct;
+	return (e);
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function dragStart(e)
+{
+	e.dataTransfer.setData("id", 1);
+	console.log ("dragStart " + e.target + " id = " + e.target.id);
+	document._dragged = e.target;
+	e.dataTransfer.dropEffect = "copy";
+	
+//e.preventDefault();
+}
+
+function dragDrop(e)
+{
+	console.log ("dragDrop");
+	e.preventDefault();
+}
+
+function dragEnter(e)
+{
+	console.log ("dragEnter " + e.target.textContent);
+	e.preventDefault();
+}
+
+function drop(e)
+{
+	console.log ("drop");
+	e.preventDefault();
+}
+
+function allowDrop(e)
+{
+	var el = e.target;
+	var re = el.getBoundingClientRect();
+	if (el.parentNode.parentNode.parentNode == document._dragged.parentNode.parentNode.parentNode) {
+		if (el == document._dragged) return;
+		console.log ("allowDrop " + e.target.textContent + " mouseX:" + e.clientX + " left:" + re.left);
+
+		if (e.clientY < ((re.top+re.bottom)/2)) {
+			//el.parentNode.insertBefore(document._dragged, el);
+		} else if (el.nextSibling) {
+			//el.parentNode.insertBefore(document._dragged, el.nextSibling);
+		} else {
+			var pp = document._dragged.parentNode;
+			el.parentNode.appendChild(document._dragged);
+			pp.appendChild(el);
+		}
+	} else if (el.nextSibling && el.nextSibling.className == 'dragd') {
+		el = el.nextSibling;
+		if (el == document._dragged) return;
+		console.log ("allowDrop overd prevSibling");
+
+		var pp = document._dragged.parentNode;
+		var fch = el.firstChild;
+		el.appendChild(document._dragged);
+		pp.appendChild(fch);
+
+	} else if (el.className == 'dragd') {
+		if (el == document._dragged) return;
+		console.log ("allowDrop overd");
+
+		var pp = document._dragged.parentNode;
+		var fch = el.firstChild;
+		el.appendChild(document._dragged);
+		pp.appendChild(fch);
+	}
+	e.preventDefault();
+}
+
+
+function makeQuery(t)
+{
+	t = t.trim();
+	var e = document.createElement('p');
+	//var r = /([^\/]* )*(([^ ]+\/)+[^ ]+)( [^\/]*)*/.exec(t)
+	var start = 0;
+	var rx = /(([^ ]+\/)+[^ ]+)/g;
+	var napplied = 0;
+	while (r = (rx.exec(t))) {
+		var x = document.createTextNode(t.substr(start,r.index));
+		e.appendChild(x);
+		start = r.index;
+		e.appendChild(makeSelect(r[0]));
+		start += r[0].length;
+		napplied ++;
+	}
+	if (napplied > 0) {
+		var x = document.createTextNode(t.substr(start,t.length-start));
+		e.appendChild(x);
+		return (e);
+	}
+
+	if (t.startsWith('|')) {
+		e.className = "sorter";
+		var ar = t.substr(1).split(' ');
+		var solution = ar.join('--');
+		e._solution = solution;
+		shuffleArray(ar);
+		for (var i = 0; i < ar.length; i ++) {
+			var w = ar[i].trim();
+			if (!w.length) continue;
+			var ne = document.createElement('div');
+			ne.className = 'tagger';
+			ne.textContent = w;
+
+			ne.setAttribute('draggable', 'true');
+			ne.addEventListener('dragstart', dragStart);
+			ne.addEventListener('dragover', allowDrop);
+			ne.addEventListener('dragenter', dragEnter);
+			ne.addEventListener('dragend', drop);
+			ne.addEventListener('drop', drop);
+
+			e.appendChild(ne);
+
+		}
+	}
+
+	return (e);
+}
+
+function loadSlovicka(eln, nen)
+{
+	var e = document.getElementById(eln);
+	var ne = document.getElementById(nen);
+	var result = e.textContent.split(/\r?\n/);
+	var slovicka = {};
+	var lekce = null;
+	for (var i = 0; i < result.length; i ++) {
+		[s_e,s_c] = result[i].split('|');
+		if (s_e.startsWith('#')) {
+			lekce = s_e.substr(1);
+			slovicka[lekce] = [];
+		} else if (s_c != undefined) {
+			slovicka[lekce].push([s_e,s_c]);
+		}
+	}
+	return (slovicka);
+}
+
+function dblClick(e)
+{
+	if (e.target.parentNode.nodeName == "DIV") {
+		var els = document.getElementById('dragwords');
+		for (var i = 0; i < els.children.length; i++) {
+			var x = els.children[i];
+			if (x.lastChild.firstChild == null) {
+				x.lastChild.appendChild(e.target);
+				break;
+			}
+		}
+	} 
+}
+
+function createDraggingWords(lst, chpt, limit)
+{
+	var sls = [];
+	var kys = Object.keys(lst);
+	for (var i = 0; i < chpt.length; i++) {
+		if (Number.isInteger(chpt[i])) {
+			var x = chpt[i];
+			if (x < 0) {
+				x += kys.length;
+			sls = sls.concat(lst[kys[x]]);
+			}
+		} else 
+			sls = sls.concat(lst[chpt[i]]);
+	}
+	document._chapters = "" + chpt;
+	document._ntry = 0;
+	shuffleArray(sls);
+	if (limit != undefined)
+		sls = sls.slice(0,limit);
+
+	var div = document.createElement('div');
+	var table = document.createElement('table');
+	var tbody = document.createElement('tbody');
+	tbody.id = 'dragwords';
+	table.appendChild(tbody);
+	var res = [];
+	
+	var y = 0;
+	sls.forEach(function(x) {
+		y++;
+		if (x == undefined) return;
+		var tr = document.createElement('tr');
+		tbody.appendChild(tr);
+		var td = document.createElement('td');
+		//alert(x + "-" + limit);
+		td.textContent = x[0];
+		td._value = y;
+		td.addEventListener('dragover', allowDrop);
+		tr.appendChild(td);
+		td = document.createElement('td');
+		var ne = document.createElement('div');
+		ne.textContent = x[1];
+		res.push(ne);
+		ne._value = y;
+		tr.appendChild(td);
+		td.className = 'dragd';
+		td.addEventListener('dragover', allowDrop);
+		//td.addEventListener('dragenter', dragEnter);
+
+		ne.setAttribute('draggable', 'true');
+		ne.addEventListener('dragstart', dragStart);
+		ne.addEventListener('dragover', allowDrop);
+		ne.addEventListener('dragenter', dragEnter);
+		ne.addEventListener('dragend', drop);
+		ne.addEventListener('drop', drop);
+		ne.addEventListener('dblclick', dblClick);
+	});
+	shuffleArray(res);
+	document.getElementById('wocab').insertBefore(table, document.getElementById('wocab').firstChild);
+	res.forEach(function(x) {
+			div.appendChild(x);
+			});
+	document.getElementById('wpool').appendChild(div);
+}
+
+
+
+function init(eln, nen)
+{
+	var slovicka = loadSlovicka(eln, nen);
+	var chapters = [-1];
+	var limit = undefined;
+	var hsh = window.location.hash;
+	if (hsh && hsh.length > 1) {
+		if (hsh.includes("#limit")) {
+			[hsh,limit] = hsh.split("#limit");
+			limit = Number.parseInt(limit);
+		}
+		chapters = hsh.substring(1).split(',');
+	}
+	document._definition = chapters + " ";
+	if (limit)
+		document._definition += "_limit_" + limit;
+
+	createDraggingWords(slovicka, chapters, limit);
+}
+
+function ovateRpt()
+{
+	var ls = document.getElementsByTagName('td');
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		var r = s.getBoundingClientRect();
+		s._mx += s._dx;
+		s._my += s._dy;
+		s._mr += s._dr;
+		s.style.left = (s._mx) + "px";
+		s.style.top = (s._my) + "px";
+	//	s.style.transform = "rotate(" + s._mr + "deg)";
+
+		var r = s.getBoundingClientRect();
+		if (r.right > window.innerWidth) {
+			s._dx = - s._dx;
+			s._mx = window.innerWidth - r.width;
+		} else if (r.left < 0) {
+			s._dx = - s._dx;
+		}
+		if (r.bottom > window.innerHeight || r.top < 0) s._dy = - s._dy;
+	}
+
+
+}
+function ovate()
+{
+	var ls = document.getElementsByTagName('td');
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		var r = s.getBoundingClientRect();
+		s._mx = r.left;
+		s._my = r.top;
+		s._mr = 0;
+		s._dx = Math.random()*2 - 1;
+		s._dy = Math.random()*2 - 1;
+		s._dr = Math.random()*2 - 1;
+	}
+
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		var r = s.getBoundingClientRect();
+		s.style.position = 'absolute';
+		s.style.left = (s._mx) + "px";
+		s.style.top = (s._my) + "px";
+	//s.style.transform = "rotate(1deg)";
+		//alert("r.left = " + r.left + " " + s.style.left);
+	}
+	setInterval(ovateRpt, 5);
+
+}
+
+function checkDrags(e)
+{
+	var okcnt = 0, errcnt = 0;
+	for (var i = 0; i < e.children.length; i++) {
+		var x = e.children[i];
+		var res = x.lastChild.firstChild?x.lastChild.firstChild._value:null;
+
+		//alert(x.firstChild._value + "--" + res);
+		if (x.firstChild._value != res) {
+			x.className = "error";
+			errcnt += 1;
+		} else {
+			x.className = "correct";
+			okcnt += 1;
+		}
+	}
+	document._ntry += 1;
+	if (errcnt == 0) {
+		ovate();
+	}
+}
+
+function check(evt, ee)
+{
+	var e = document.getElementById(ee);
+	var ls = e.getElementsByTagName("select");
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		if (s.value != s._correct) {
+			s.parentNode.className = 'bad';
+		} else {
+			s.parentNode.className = 'good';
+		}
+	}
+	var ls = e.getElementsByClassName("sorter");
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		var ar = [];
+		for (var n = 0; n < s.childNodes.length; n ++) {
+			ar.push(s.childNodes[n].textContent);
+		}
+		console.log(s._solution + "!=" + ar.join("--"));
+		if (s._solution == ar.join("--"))
+			s.className = 'sorter good';
+		else
+			s.className = 'sorter bad';
+	}
+	evt.stopPropagation();
+}
+	</script>
+	<title>Angličtina pro Markétu</title>
+<style type="text/css">
+	p { margin: 0.5em; padding: 0.5em; display: block; }
+	.bad { background: red; }
+	.good { background: green; }
+	.tagger {
+	display: inline;
+	 margin: 0.5em;
+	padding: 0.5em;
+	border: 1px solid black;
+}
+
+.correct {
+	background-color: rgb(100,255,100) !important;
+}
+.error {
+	background-color: red !important;
+}
+
+.dragd {
+	width: 100px;
+	border: 0px solid red;
+}
+
+#wocab table {
+	width: 100%;
+	border: 3px solid black;
+	border-collapse: collapse;
+}
+
+#wocab table td {
+padding: 0.3em;
+	width: 50%;
+	border: 1px solid black;
+}
+
+#wpool div {
+	cursor: pointer;
+}
+
+</style>
+
+</head>
+<body onload="init('s1', 'f1')">
+<div id="wocab">
+<div id="wpool"/>
+</div>
+<pre id="s1" style="display:none">
+#A
+British|britský
+Czech|český
+the Czech Republec|Česká republika
+France|Francie
+French|francouzský,francouzština
+Hungarian|maďarský,maďarština
+Hungary|Maďarsko
+Poland|Polsko
+Polish|polský,polština
+Slovak|slovenský,slovenština
+Spain|Španělsko
+Spanish|spanělský,španělština
+Swiss|švýcarský
+Switzerland|Švýcarsko
+the UK|Spojené království
+another|jiný,další
+competition|soutěž
+finish|dokončit,skončit
+hurry up|spěchat
+nationality|národnost
+press|stisknout
+prize|cena (v soutěži)
+save|uložit
+send|poslat
+singer|zpěvák
+slowly|pomalu
+win|vyhrát
+#B
+assembly hall|aula
+canteen|(školní) jídelna
+classroom|třída,učebna
+entrance|vchod
+gym|tělocvična
+head's office|ředitelna
+library|knihovna
+Music room|hudebna
+playground|hřiště
+playing fields|hřiště,sportoviště
+Science|přírodovědné předměty
+Science lab|laboratoř
+staffroom|sborovna
+stairs|schody
+toilet|toaleta
+bell|zvonek
+brilliant|skvělý,úžasný
+clothes|oblečení
+concert|koncert
+depend(it depends)|přijde nato jestli
+dining room|jídelna
+exchange student|student na výměnném pobytu
+first floor|první poschodí
+ground fgloor|přízemí
+gymnastics|gymnastika
+head teacher|ředitel
+imagine|představovat si
+introduce|představit
+joke|vtip
+left|levý, vlevo
+never|nikdy
+often|často
+Pleased to meet you|Rád vás poznávám
+right|pravý, vpravo
+show around|provést někoho po něčem, ukázat někomu něco
+sometimes|někdy
+traditional|tradiční
+usually|obvykle
+visitor|návštěvník
+way|cesta
+wear|nosit
+welcome|vítejte
+#C
+break time|přestávka
+cute|roztomilý
+ever|někdy
+letter|písmeno,dopis
+mistake|chyba
+outside|venku
+#1A
+basketball|košíková
+butterfly|motýl
+dance|tančit
+dive|potápět se
+guitar|kytara
+gymnastics|gymnastika
+do magic|kouzlit
+speak|mluvit
+sudoku|sudoku
+buddy|kámoš
+certificate|certifikát
+information|informace
+school report|vysvědčení
+See you soon|Brzy na viděnou
+teach|učit
+weather|počasí
+#1B
+aunt|teta
+brother|bratr
+chold-children|dítě-děti
+cousin|bratranec, sestřenice
+daughter|dcera
+father|otec
+grandfather|dědeček
+grandmother|babička
+grandparents|prarodiče
+grand-grandfather|pradědeček
+grand-grandmother|prababička
+husband|manžel
+mother|matka
+nephew|synovec
+niece|neteř
+parents|rodiče
+sister-in-law|švagrová
+son|synovec
+stepbrother|nevlastní bratr
+stepfather|nevlastní otec
+stepsister|nevlastní sestra
+uncle|strýc
+wife|manželka
+boring|nudný
+can't stand|nemoci někoho/něco vystát
+Christmas|Vánoce
+elastic|pružný
+escape|utéci, uniknout
+family tree|rodokmen
+hate|nenávidět
+invent|vynalézt
+It's not fair!|To není fér!
+nurse|zdravotní sestra
+run away from|utíkat pryč od
+sky|nebe
+surfer|surfař
+#1C
+beard|plnovous
+nose|nos
+eyes|oči
+hair|vlasy
+clever|chytrý
+curly (hair)|kudrnatý
+friendly|přátelský
+fringe|ofina
+lively|živý, energický
+moustache|knír
+naughty|zlobivý
+noisy|hlučný
+pony tail|culík
+quiet|tichý
+shy|plachý
+sporty|sportovně založený
+catalogue|katalog
+lovely|roztomilý
+remote|dálkový (ovladač)
+wonderful|úžasný
+#1D
+cream|smetana
+crimson|sytě červený
+cut up|rozkrájet
+eyebrows|obočí
+forget|zapomenout
+gauze|gáza
+glue|lepidlo
+hold|držet
+laugh|smát se
+lip|ret
+pass (sb sth)|podat (někomu něco)
+scissors|nůžky
+soon|brzy
+spot|skvrna
+He's saying he's hungry.|Říká, že má hlad.
+Look! These are his eyebrows.|Podívej! To je jeho obočí!
+Look, do it like this.|Podívej, udělej to takto.
+Sorry, can you explain, please?|Pardon, můžete to prosím vysvětlit?
+Sorry, can you say that again, please?|Promiňte, můžete to prosím zopakovat?
+What does eyebrows mean?|Co znamená "eyebrows"?
+What's he saying? I don't understand.|Co říká? Nerozumím.
+</pre>
+<form id="f1">
+</form>
+<!--<button onclick="check(event,'f1')">Zkontrolovat</button>-->
+<button onclick="checkDrags(document.getElementById('dragwords'))">Zkontrolovat</button>
+<button style="display:none" onclick="ovate(document.getElementById('dragwords'))">Vyhrat</button>
+</body>
+</html>
