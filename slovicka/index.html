@@ -44,6 +44,7 @@ function dragStart(e)
 	document._dragged = e.target;
 	e.dataTransfer.dropEffect = "copy";
 	
+	document._prevdrag = null;
 //e.preventDefault();
 }
 
@@ -57,12 +58,14 @@ function dragEnter(e)
 {
 	console.log ("dragEnter " + e.target.textContent);
 	e.preventDefault();
+	//document._prevdrag = null;
 }
 
 function drop(e)
 {
 	console.log ("drop");
 	e.preventDefault();
+	document._prevdrag = null;
 }
 
 function allowDrop(e)
@@ -81,6 +84,7 @@ function allowDrop(e)
 			var pp = document._dragged.parentNode;
 			el.parentNode.appendChild(document._dragged);
 			pp.appendChild(el);
+
 		}
 	} else if (el.nextSibling && el.nextSibling.className == 'dragd') {
 		el = el.nextSibling;
@@ -90,7 +94,12 @@ function allowDrop(e)
 		var pp = document._dragged.parentNode;
 		var fch = el.firstChild;
 		el.appendChild(document._dragged);
-		pp.appendChild(fch);
+		if (fch) pp.appendChild(fch);
+		if (document._prevdrag && document._prevdrag != el) {
+	//		if (document._prevval) document._prevdrag.appendChild(document._prevval);
+		}
+		document._prevdrag = el;
+		document._prevval = fch;
 
 	} else if (el.className == 'dragd') {
 		if (el == document._dragged) return;
@@ -99,7 +108,13 @@ function allowDrop(e)
 		var pp = document._dragged.parentNode;
 		var fch = el.firstChild;
 		el.appendChild(document._dragged);
-		pp.appendChild(fch);
+		if (fch) pp.appendChild(fch);
+		if (document._prevdrag && document._prevdrag != el) {
+		//	document._prevdrag.appendChild(document._prevval);
+		//	if (document._prevval) document._prevdrag.appendChild(document._prevval);
+		}
+		document._prevdrag = el;
+		document._prevval = fch;
 	}
 	e.preventDefault();
 }
@@ -477,7 +492,7 @@ depend(it depends)|přijde nato jestli
 dining room|jídelna
 exchange student|student na výměnném pobytu
 first floor|první poschodí
-ground fgloor|přízemí
+ground floor|přízemí
 gymnastics|gymnastika
 head teacher|ředitel
 imagine|představovat si
