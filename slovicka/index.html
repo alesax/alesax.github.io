@@ -41,7 +41,7 @@ function dragStart(e)
 {
 	e.dataTransfer.setData("id", 1);
 	console.log ("dragStart " + e.target + " id = " + e.target.id);
-	if (e.target.nodeName != 'TD') return;
+	if (e.target.nodeName != 'DIV') return;
 	document._dragged = e.target;
 	document._last_parent = e.target.parentNode;
 	document._last_content = e.target;
