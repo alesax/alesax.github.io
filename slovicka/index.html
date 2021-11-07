@@ -42,6 +42,8 @@ function dragStart(e)
 	e.dataTransfer.setData("id", 1);
 	console.log ("dragStart " + e.target + " id = " + e.target.id);
 	document._dragged = e.target;
+	document._last_parent = e.target.parentNode;
+	document._last_content = e.target;
 	e.dataTransfer.dropEffect = "copy";
 	
 	document._prevdrag = null;
@@ -72,53 +74,30 @@ function allowDrop(e)
 {
 	var el = e.target;
 	var re = el.getBoundingClientRect();
-	if (el.parentNode.parentNode.parentNode == document._dragged.parentNode.parentNode.parentNode) {
-		if (el == document._dragged) return;
-		console.log ("allowDrop " + e.target.textContent + " mouseX:" + e.clientX + " left:" + re.left);
 
-		if (e.clientY < ((re.top+re.bottom)/2)) {
-			//el.parentNode.insertBefore(document._dragged, el);
-		} else if (el.nextSibling) {
-			//el.parentNode.insertBefore(document._dragged, el.nextSibling);
-		} else {
-			var pp = document._dragged.parentNode;
-			el.parentNode.appendChild(document._dragged);
-			pp.appendChild(el);
-
-		}
-	} else if (el.nextSibling && el.nextSibling.className == 'dragd') {
+	if (el.nextSibling && el.nextSibling.className == 'dragd') 
 		el = el.nextSibling;
-		if (el == document._dragged) return;
-		console.log ("allowDrop overd prevSibling");
 
-		var pp = document._dragged.parentNode;
-		var fch = el.firstChild;
-		el.appendChild(document._dragged);
-		if (fch) pp.appendChild(fch);
-		if (document._prevdrag && document._prevdrag != el) {
-	//		if (document._prevval) document._prevdrag.appendChild(document._prevval);
-		}
-		document._prevdrag = el;
-		document._prevval = fch;
+	if (el.parentNode && el.parentNode.className == 'dragd')
+		el = el.parentNode;
 
-	} else if (el.className == 'dragd') {
-		if (el == document._dragged) return;
-		console.log ("allowDrop overd");
+	if (el.className != 'dragd') return;
 
-		var pp = document._dragged.parentNode;
-		var fch = el.firstChild;
-		el.appendChild(document._dragged);
-		if (fch) pp.appendChild(fch);
-		if (document._prevdrag && document._prevdrag != el) {
-		//	document._prevdrag.appendChild(document._prevval);
-		//	if (document._prevval) document._prevdrag.appendChild(document._prevval);
-		}
-		document._prevdrag = el;
-		document._prevval = fch;
+	if (document._last_parent) {
+		document._last_parent.appendChild(document._last_content);
+		document._last_parent = null;
 	}
-	e.preventDefault();
-}
 
+	if (el.firstChild) {
+		document._last_parent = el;
+		document._last_content = el.firstChild;
+	}
+
+	el.appendChild(document._dragged);
+
+	e.preventDefault();
+	return;
+}
 
 function makeQuery(t)
 {
@@ -553,7 +532,7 @@ nephew|synovec
 niece|neteř
 parents|rodiče
 sister-in-law|švagrová
-son|synovec
+son|syn
 stepbrother|nevlastní bratr
 stepfather|nevlastní otec
 stepsister|nevlastní sestra
