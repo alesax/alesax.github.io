@@ -394,6 +394,7 @@ function init(eln, nen)
 	if (hsh && hsh.length > 1) {
 		if (hsh.includes ("/")) {
 			[nod,hsh] = hsh.split("/");
+			hsh = "#" + hsh;
 		}
 		if (hsh.includes("#limit")) {
 			[hsh,limit] = hsh.split("#limit");
