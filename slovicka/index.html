@@ -37,6 +37,48 @@ function shuffleArray(array) {
     }
 }
 
+function dragLStart(e)
+{
+	document._dragletel = e.target;
+	console.log("dragLStart: " + e.target.textContent);
+}
+
+function dragLEnter(e)
+{
+	e.preventDefault();
+}
+
+function dragLDrop(e)
+{
+	e.preventDefault();
+}
+
+function dropL(e)
+{
+	e.preventDefault();
+}
+
+function allowLDrop(e)
+{
+	var el = e.target;
+	var re = el.getBoundingClientRect();
+	if (el == document._dragletel)
+		return;
+	if (el.parentNode != document._dragletel.parentNode)
+		return;
+
+	if (e.clientX < ((re.left+re.right)/2)) {
+		el.parentNode.insertBefore(document._dragletel, el);
+	} else if (el.nextSibling && el.nextSibling != document._dragletel) {
+		el.parentNode.insertBefore(document._dragletel, el.nextSibling);
+	} else if (el.nextSibling == null) {
+		el.parentNode.appendChild(document._dragletel);
+	}
+	e.preventDefault();
+}
+
+
+
 function dragStart(e)
 {
 	e.dataTransfer.setData("id", 1);
@@ -183,6 +225,89 @@ function dblClick(e)
 	} 
 }
 
+function checkLetters()
+{
+	var e = document.getElementById("shuffletters");
+
+	for (var i = 0; i < e.children.length; i++) {
+		var x = e.children[i];
+		if (x.className != 'shuffletrow') continue;
+
+		var ang = '';
+		for (var n = 0; n < x.lastChild.children.length; n++) {
+			var y = x.lastChild.children[n];
+			ang += y.textContent;
+		}
+		if (ang == x._value) {
+			x.parentNode.removeChild(x);
+		}
+
+	}
+}
+function createDraggingLetters(lst, chpt, limit)
+{
+	var sls = [];
+	var kys = Object.keys(lst);
+	for (var i = 0; i < chpt.length; i++) {
+		if (Number.isInteger(chpt[i])) {
+			var x = chpt[i];
+			if (x < 0) {
+				x += kys.length;
+			sls = sls.concat(lst[kys[x]]);
+			}
+		} else 
+			sls = sls.concat(lst[chpt[i]]);
+	}
+	document._chapters = "" + chpt;
+	document._ntry = 0;
+
+	sls = sls.filter(function(x) {
+		if (x[0].includes(",") || x[0].includes(" "))
+			return false;
+		return true;
+
+	});
+	shuffleArray(sls);
+	if (limit != undefined)
+		sls = sls.slice(0,limit);
+
+	sls.forEach(function(x) {
+		var el = document.createElement("div");
+		el.className = "shuffletrow";
+		el.appendChild(document.createTextNode(x[1]));
+		el._value = x[0];
+		var els = document.createElement("div");
+		els.className = "shuffletters";
+		el.appendChild(els);
+
+		var shl = x[0].split("");
+		shuffleArray(shl);
+		shl.forEach(function(l) {
+			var lx = document.createElement("div");
+			lx.textContent = l;
+
+			lx.setAttribute('draggable', 'true');
+			lx.addEventListener('dragstart', dragLStart);
+			lx.addEventListener('dragover', allowLDrop);
+			lx.addEventListener('dragenter', dragLEnter);
+			lx.addEventListener('dragend', dropL);
+			lx.addEventListener('drop', dropL);
+			els.appendChild(lx);
+
+
+		});
+
+
+		document.getElementById("shuffletters").appendChild(el);
+	});
+
+	el = document.createElement("button");
+	el.textContent = "Zkontrolovat písmena";
+	el.addEventListener('click', checkLetters);
+	document.getElementById("shuffletters").appendChild(el);
+}
+
+
 function createDraggingWords(lst, chpt, limit)
 {
 	var sls = [];
@@ -268,6 +393,8 @@ function init(eln, nen)
 		document._definition += "_limit_" + limit;
 
 	createDraggingWords(slovicka, chapters, limit);
+
+	//createDraggingLetters(slovicka, chapters, 2);
 }
 
 function ovateRpt()
@@ -410,6 +537,25 @@ padding: 0.3em;
 
 #wpool div {
 	cursor: pointer;
+}
+
+.shuffletters div {
+	cursor: pointer;
+	display: inline-block !important;
+	width: 2em !important;
+	height: 1.5em;
+	text-align: center;
+	margin: 1px;
+	padding: 2px;
+	border: 1px solid black;
+}
+
+.shuffletters {
+	padding-left: 2em;
+}
+
+.shuffletrow div {
+display: inline;
 }
 
 </style>
@@ -595,11 +741,63 @@ Sorry, can you explain, please?|Pardon, můžete to prosím vysvětlit?
 Sorry, can you say that again, please?|Promiňte, můžete to prosím zopakovat?
 What does eyebrows mean?|Co znamená "eyebrows"?
 What's he saying? I don't understand.|Co říká? Nerozumím.
+#2A
+armchair|křeslo
+attic|půda
+basin|umyvadlo
+bath|vana
+bathroom|koupelna
+bed|postel
+bedroom|ložnice
+box|krabice
+carpet|koberec
+chair|židle
+cupboard|kredenc,kuchyňská skříňka
+desk|stůl,lavice
+dining room|jídelna
+garage|garáž
+lamp|lampa
+light|světlo
+picture|obrázek
+poster|plakát
+shower|sprcha
+sofa|pohovka
+table|stůl
+TV|televize
+wardrobe|skříň
+dowstairs|dolů, o patro níž
+laugh at|smát se někomu, něčemu
+scared|vystrašený
+upstairs|nahoru, o patro výš
+#2B
+No way!|Ani nápad!
+run down|běžet dolů
+#2C
+baker's|pekařství
+butcher's řeznictví
+bookshop|knihkupectví
+corner-shop|obchůdek se smíšeným zbožím
+florist's|květinářství
+games shop|obchod s pc hrami
+pet shop|zverimex
+shoe shop|obuvnictví
+sports shop|obchod se sportovními potřebami
+sweet shop|cukrárna
+book (v)|zamluvit, objednat
+fabulous|úžasný, skvělý
+football pitch|fotbalové hřiště
+heaven|ráj
+incredible|neuvěřitelný
+That's a pity|To je škoda
+relaxing|odpočinkový, uvolňující
+remember|pamatovat
+rollerblade|kolečkové brusle
+voucher|poukázka
 </pre>
 <form id="f1">
 </form>
 <!--<button onclick="check(event,'f1')">Zkontrolovat</button>-->
-<button onclick="checkDrags(document.getElementById('dragwords'))">Zkontrolovat</button>
+<div id="shuffletters"/>
 <button style="display:none" onclick="ovate(document.getElementById('dragwords'))">Vyhrat</button>
 </body>
 </html>
