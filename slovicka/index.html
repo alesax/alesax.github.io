@@ -374,6 +374,15 @@ function createDraggingWords(lst, chpt, limit)
 }
 
 
+function initDrags(slovicka, chapters, limit, nen)
+{
+	createDraggingWords(slovicka, chapters, limit);
+	var b = document.createElement('button');
+	b.textContent = "Zkontrolovat";
+	b.addEventListener('click', function(e) {checkDrags(document.getElementById('dragwords'));e.preventDefault();});
+	document.getElementById(nen).appendChild(b);
+
+}
 
 function init(eln, nen)
 {
@@ -381,7 +390,11 @@ function init(eln, nen)
 	var chapters = [-1];
 	var limit = undefined;
 	var hsh = window.location.hash;
+	var nod = null;
 	if (hsh && hsh.length > 1) {
+		if (hsh.includes ("/")) {
+			[nod,hsh] = hsh.split("/");
+		}
 		if (hsh.includes("#limit")) {
 			[hsh,limit] = hsh.split("#limit");
 			limit = Number.parseInt(limit);
@@ -392,9 +405,13 @@ function init(eln, nen)
 	if (limit)
 		document._definition += "_limit_" + limit;
 
-	createDraggingWords(slovicka, chapters, limit);
+	//createDraggingWords(slovicka, chapters, limit);
 
-	//createDraggingLetters(slovicka, chapters, 2);
+	if (nod == '#letters') {
+		createDraggingLetters(slovicka, chapters, limit);
+	} else {
+		initDrags(slovicka, chapters, limit, nen);
+	}
 }
 
 function ovateRpt()
@@ -796,7 +813,7 @@ voucher|poukázka
 </pre>
 <form id="f1">
 </form>
-<button onclick="checkDrags(document.getElementById('dragwords'))">Zkontrolovat</button>
+<!--<button onclick="checkDrags(document.getElementById('dragwords'))">Zkontrolovat</button>-->
 <div id="shuffletters"/>
 <button style="display:none" onclick="ovate(document.getElementById('dragwords'))">Vyhrat</button>
 </body>
