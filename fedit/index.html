@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"> <head> <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="Content-Language" content="cs" />
+	<meta name="author" content="Alesak" />
+	<script language="JavaScript" type="text/javascript">
+
+var fontWidth = 6;
+var fontHeight = 8;
+var fontBox = 40;
+var chars = Array();
+
+function check(evt, ee)
+{
+	var e = document.getElementById(ee);
+	var ls = e.getElementsByTagName("select");
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		if (s.value != s._correct) {
+			s.parentNode.className = 'bad';
+		} else {
+			s.parentNode.className = 'good';
+		}
+	}
+	var ls = e.getElementsByClassName("sorter");
+	for (var i = 0; i < ls.length; i++) {
+		var s = ls [i];
+		var ar = [];
+		for (var n = 0; n < s.childNodes.length; n ++) {
+			ar.push(s.childNodes[n].textContent);
+		}
+		console.log(s._solution + "!=" + ar.join("--"));
+		if (s._solution == ar.join("--"))
+			s.className = 'sorter good';
+		else
+			s.className = 'sorter bad';
+	}
+	evt.stopPropagation();
+}
+
+function draw_charlist(selected)
+{
+	var canvas = document.getElementById('charlist');
+	var ctx = canvas.getContext("2d");
+	ctx.font = "20px Arial";
+	let metrics = ctx.measureText('HELLOj');
+
+	let fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+	let actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+	let tabHei = actualHeight * 2;
+	canvas.height = 256*tabHei;
+	canvas._barhei = tabHei;
+	for (var i = 0; i < 256; i ++) {
+		ctx.beginPath();
+		if (i == selected) {
+			ctx.fillStyle = "#E0E0E0";
+			ctx.fillRect(0, tabHei*i, 100, tabHei);
+			ctx.fillStyle = "#000000";
+			ctx.rect(0, tabHei*i, 100, tabHei);
+		} else {
+			ctx.rect(0, tabHei*i, 100, tabHei);
+		}
+		var m = ctx.measureText('' + i);
+		ctx.fillText ('' + i, 40 - m.width, i*tabHei + actualHeight);
+
+		let s = '' + String.fromCharCode(i);
+		var m = ctx.measureText(s);
+		ctx.fillText (s, 60 - m.width, i*tabHei + actualHeight);
+		ctx.stroke();
+	}
+}
+
+function just_draw_char(chr)
+{
+	var canvas = document.getElementById('char');
+	var ctx = canvas.getContext("2d");
+	canvas.width = fontWidth*fontBox;
+	canvas.height = fontHeight*fontBox;
+	var ida = null;
+	if (chr in chars)
+		ida = chars[chr];
+	else
+		ida = new Array();
+
+	chars[chr] = ida;
+
+	for(var y = 0; y < fontHeight; y ++) {
+		for(var x = 0; x < fontWidth; x ++) {
+			var idx = (fontWidth*y + x);
+			if (ida [idx] == 1) {
+				ctx.fillStyle = "#000000";
+				ctx.fillRect(x * fontBox, y * fontBox, fontBox, fontBox);
+			} else {
+			}
+				ctx.rect(x * fontBox, y * fontBox, fontBox, fontBox);
+		}
+	}
+	ctx.stroke();
+}
+
+
+function draw_char(chr)
+{
+	var canvas = document.getElementById('char');
+	var ctx = canvas.getContext("2d");
+	canvas.width = fontWidth*fontBox;
+	canvas.height = fontHeight*fontBox;
+	var ida = null;
+	if (chr in chars)
+		ida = chars[chr];
+	else
+		ida = new Array();
+
+	chars[chr] = ida;
+
+	for(var y = 0; y < fontHeight; y ++) {
+		for(var x = 0; x < fontWidth; x ++) {
+			var idx = (fontWidth*y + x);
+			if (ida [idx] == 1) {
+				ctx.fillStyle = "#000000";
+				ctx.fillRect(x * fontBox, y * fontBox, fontBox, fontBox);
+			} else {
+			}
+				ctx.rect(x * fontBox, y * fontBox, fontBox, fontBox);
+		}
+	}
+	ctx.stroke();
+	canvas._ida = ida;
+	canvas._chr = chr;
+
+}
+
+function onGlyphClick(e) {
+	var canvas = e.target;
+	var nx = Number.parseInt((e.pageX-e.target.offsetLeft)/fontBox), ny = Number.parseInt((e.pageY-e.target.offsetTop)/fontBox);
+	var idx = (fontWidth*ny + nx);
+
+	if (canvas._ida[idx] == 1)
+		canvas._ida [idx] = 0;
+	else
+		canvas._ida [idx] = 1;
+	just_draw_char(canvas._chr);
+	update_btx();
+}
+function onCharlistClick(e) 
+{
+	var nx = e.pageX-e.target.offsetLeft, ny = e.pageY-e.target.offsetTop;
+	var chr = Number.parseInt(ny / e.target._barhei);
+
+	draw_charlist(chr);
+	draw_char(chr);
+}
+
+
+function init_fedit()
+{
+	draw_charlist(null);
+	var canvas = document.getElementById('char');
+	canvas.addEventListener('click', onGlyphClick);
+	canvas =  document.getElementById('charlist');
+	canvas.addEventListener('click', onCharlistClick);
+}
+
+function update_btx()
+{
+	var tx = "static const uint8_t *font = {\n";
+
+	for (var i = 0; i < 256; i++) {
+
+		if (i in chars)
+			ida = chars[i];
+		else
+			ida = new Array();
+
+		for(var x = 0; x < fontWidth; x ++) {
+			var b = 0;
+			for(var y = fontHeight - 1; y >= 0; y --) {
+				var idx = (fontWidth*y + x);
+				b = b<<1;
+				if (ida [idx] == 1)
+					b |= 1;
+			}
+			var hx = (b).toString(16);
+			if (hx.length == 1) hx = '0' + hx;
+			hx = '0x' + hx;
+			tx = tx + hx + ', ';
+		}
+		tx += '\n';
+
+	}
+	var out = document.getElementById('bottom');
+	out.textContent = tx;
+}
+
+
+	</script>
+	<title>fedit - font editor</title>
+<style type="text/css">
+	p { margin: 0.5em; padding: 0.5em; display: block; }
+	.bad { background: red; }
+	.good { background: green; }
+	.tagger {
+	display: inline;
+	 margin: 0.5em;
+	padding: 0.5em;
+	border: 1px solid black;
+	}
+#main {
+display: flex;
+}
+
+#leftbar {
+flex: none;
+      max-width: 100px !important;
+}
+#rightbar {
+flex: none;
+}
+
+#bottom {
+flex: none;
+	font-family: monospace;
+	white-space: pre;
+}
+
+</style>
+
+</head>
+<body onload="init_fedit()">
+<div id="main">
+	<div id="leftbar">
+		<canvas id="charlist"/>
+	</div>
+	<div id="rightbar">
+		<canvas id="char"/>
+	</div>
+	<div id="bottom">
+	</div>
+</div>
+</body>
+</html>
